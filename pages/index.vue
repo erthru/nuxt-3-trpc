@@ -1,25 +1,17 @@
 <script setup lang="ts">
-import { Prisma } from "@prisma/client";
-
 const { $client } = useNuxtApp();
-
-const { data, refresh } = await $client.db.useQuery({
-  model: "todo",
-  fn: "findMany",
-  args: {},
-});
+const { data: todos, refresh } = await $client.todoRouter.getAll.useQuery();
 
 const addTodo = async () => {
-  await $client.db.useQuery({
-    model: "todo",
-    fn: "create",
-    args: {
-      data: {
-        task: `New Random Task ${new Date().getTime()}`,
-      },
-    } as Prisma.TodoCreateArgs,
+  await $client.todoRouter.create.mutate({
+    task: `task ${new Date().getTime()}`,
   });
 
+  refresh();
+};
+
+const deleteTodo = async (id: number) => {
+  await $client.todoRouter.delete.mutate(id);
   refresh();
 };
 </script>
@@ -27,6 +19,13 @@ const addTodo = async () => {
 <template>
   <section>
     <button @click="addTodo">add todo</button>
-    <pre>{{ data }}</pre>
+    <ul style="display: flex; row-gap: 16px; flex-direction: column">
+      <li v-for="todo in todos" :key="todo.id">
+        <p style="display: inline">{{ todo.task }}</p>
+        <button style="margin-left: 16px" @click="deleteTodo(todo.id)">
+          Delete
+        </button>
+      </li>
+    </ul>
   </section>
 </template>
